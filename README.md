@@ -12,8 +12,17 @@ The script aslo provides an option to do a quick analyze of the resulting
 output file.
 
 ## Example
+
+Start a walk into the `/home/bzizou` directory with 8 process, excluding 
+the `.snapshot`subdirectory:
+
 ```
 bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -p /home/bzizou -x '^/home/bzizou/\.snapshot/' -n 8 |gzip > /tmp/out.gz    
+```
+
+Analyze the output:
+
+```
 bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -a /tmp/out.gz
 User                                       Size            Count
 =================================================================
