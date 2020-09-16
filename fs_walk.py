@@ -20,14 +20,16 @@ from multiprocessing import JoinableQueue as Queue
 #from multiprocessing import Manager
 import os
 import sys
-import json
 import socket
 import re
 from optparse import OptionParser
 import gzip
+import base64
+import pyjson5
+import logging
 
 # Scans a directory and prints stats in json 
-def explore_path(path):
+def explore_path(path,log):
     global options
     if options.exclude_expr:
         if re.match(options.exclude_expr, path):
@@ -47,7 +49,7 @@ def explore_path(path):
                     nondirectories.append(fullname)
                     statinfo = entry.stat()
                 data={
-                    "path" : str(fullname.encode('utf-8')),
+                    "path" : fullname.encode('utf-8','replace'),
                     "owner" : statinfo.st_uid,
                     "group" : statinfo.st_gid,
                     "mode" : statinfo.st_mode,
@@ -55,9 +57,9 @@ def explore_path(path):
                     "atime" : statinfo.st_atime,
                     "hostname" : hostname
                 }
-                print(json.dumps(data,indent=1)+",")
-    except:
-        print("Error in {} (mssing file?)".format(path),file=sys.stderr)
+                log.info(pyjson5.dumps(data,indent=1)+",")
+    except Exception as e:
+        print(path + ": ",e,file=sys.stderr)
         sys.stderr.flush()
 
     sys.stdout.flush()
@@ -65,9 +67,10 @@ def explore_path(path):
 
 # Worker for multiprocessing search of files
 def parallel_worker():
+    global log
     while True:
         path = unsearched.get()
-        dirs = explore_path(path)
+        dirs = explore_path(path,log)
         for newdir in dirs:
             unsearched.put(newdir)
         unsearched.task_done()
@@ -77,6 +80,16 @@ def print_error(err):
     print(err)
 
 if __name__ == "__main__":
+
+    # Setup a logger as a thread-safe output
+    # as we can't use directly stdout, because threads may mix their outputs
+    log = logging.getLogger()
+    log.setLevel(logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
 
     # Options parsing
     parser = OptionParser()
@@ -91,7 +104,10 @@ if __name__ == "__main__":
                       help="Regular expression for path exclusion")
     parser.add_option("-a", "--analyze",
                       dest="analyze_file", default="",
-                      help="Creates a summary based on a previously generated file")
+                      help="Creates a summary based on a previously generated json file")
+    parser.add_option("-s", "--search",
+                      dest="search_string", default="",
+                      help="Search a subset of files with syntax: [uid]:[gid]:[path_glob] (--analyze needed)")
     parser.add_option("--numeric",                                             
                       action="store_true", dest="numeric", default=False,                               
                       help="Output numeric uid/gid instead of names") 
@@ -99,60 +115,73 @@ if __name__ == "__main__":
     
     # Analyze
     if options.analyze_file:
-        import pyjson5
         import pwd
         import grp
         try:
-            with gzip.open(options.analyze_file) as json_data:
+            with gzip.open(options.analyze_file, mode='r') as json_data:
               data = pyjson5.load(json_data)
         except:
             with open(options.analyze_file) as json_data:
               data = pyjson5.load(json_data)
         finally:
-            users={}
-            groups={}
-            for file in data:
-                if file['owner'] in users:
-                    users[file['owner']]['size'] += file['size']
-                    users[file['owner']]['count'] += 1
-                else:
-                    users[file['owner']]={ 'size' : file['size'] , 'count' : 1 }
-                if file['group'] in groups:
-                    groups[file['group']]['size'] += file['size']
-                    groups[file['group']]['count'] += 1
-                else:
-                    groups[file['group']]={ 'size' : file['size'] , 'count' : 1 }
-            # Users table
-            print("{:<30} {:>16} {:>16}".format("User","Size","Count"))
-            print("=================================================================")
-            size=0
-            count=0
-            for user in sorted(users, key=lambda k: users[k]['size'], reverse=True):
-                if not options.numeric:
-                    try:
-                        user_name=pwd.getpwuid(user)[0]
-                    except:
+            # Search
+            if options.search_string:
+                import fnmatch
+                s_uid,s_gid,s_path=options.search_string.split(":")
+                for file in data:
+                    path=file['path']
+                    if (s_uid == "*" or file['owner'] == int(s_uid)) and \
+                       (s_gid == "*" or file['group'] == int(s_gid)) and \
+                       fnmatch.fnmatch(path,s_path):
+                           print(path)
+            
+            # or Sum
+            else:
+                users={}
+                groups={}
+                for file in data:
+                    if file['owner'] in users:
+                        users[file['owner']]['size'] += file['size']
+                        users[file['owner']]['count'] += 1
+                    else:
+                        users[file['owner']]={ 'size' : file['size'] , 'count' : 1 }
+                    if file['group'] in groups:
+                        groups[file['group']]['size'] += file['size']
+                        groups[file['group']]['count'] += 1
+                    else:
+                        groups[file['group']]={ 'size' : file['size'] , 'count' : 1 }
+                # Users table
+                print("{:<30} {:>16} {:>16}".format("User","Size","Count"))
+                print("=================================================================")
+                size=0
+                count=0
+                for user in sorted(users, key=lambda k: users[k]['size'], reverse=True):
+                    if not options.numeric:
+                        try:
+                            user_name=pwd.getpwuid(user)[0]
+                        except:
+                            user_name=user
+                    else:
                         user_name=user
-                else:
-                    user_name=user
-                print("{:<30} {:>16} {:>16}".format(user_name,users[user]['size'],users[user]['count']))
-                size += users[user]['size']
-                count += users[user]['count']
-            # Groups table
-            print("\n{:<30} {:>16} {:>16}".format("Group","Size","Count"))
-            print("=================================================================")
-            for group in sorted(groups, key=lambda k: groups[k]['size'], reverse=True):
-                if not options.numeric:
-                    try:
-                        group_name=grp.getgrgid(group)[0]
-                    except:
+                    print("{:<30} {:>16} {:>16}".format(user_name,users[user]['size'],users[user]['count']))
+                    size += users[user]['size']
+                    count += users[user]['count']
+                # Groups table
+                print("\n{:<30} {:>16} {:>16}".format("Group","Size","Count"))
+                print("=================================================================")
+                for group in sorted(groups, key=lambda k: groups[k]['size'], reverse=True):
+                    if not options.numeric:
+                        try:
+                            group_name=grp.getgrgid(group)[0]
+                        except:
+                            group_name=group
+                    else:
                         group_name=group
-                else:
-                    group_name=group
-                print("{:<30} {:>16} {:>16}".format(group_name,groups[group]['size'],groups[group]['count']))
-            print("\nTOTAL SIZE: {}\nTOTAL FILES: {}".format(size,count))
+                    print("{:<30} {:>16} {:>16}".format(group_name,groups[group]['size'],groups[group]['count']))
+                print("\nTOTAL SIZE: {}\nTOTAL FILES: {}".format(size,count))
         exit(0)
-    
+   
+
     # Main program (directory scan)
     print("[")
     unsearched = Queue()
