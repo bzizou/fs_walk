@@ -41,6 +41,8 @@ def explore_path(path,log):
     directories = []
     nondirectories = []
     bulk=''
+    bulk_size=0
+    max_bulk_size = int(options.max_bulk_size)
     elastic = True if options.elastic_host is not None else False
     elastic_index = options.elastic_index
     global hostname
@@ -66,6 +68,11 @@ def explore_path(path,log):
                 if elastic:
                     bulk+='{ "create" : { "_index" : "'+elastic_index+'" }}\n'
                     bulk+=pyjson5.dumps(data,indent=1)+'\n'
+                    bulk_size+=1
+                    if bulk_size >= max_bulk_size:
+                        index_bulk(bulk)
+                        bulk_size=0
+                        bulk=''
                 else:
                     log.info(pyjson5.dumps(data,indent=1)+",")
         if elastic and bulk != '':
@@ -102,7 +109,7 @@ def index_bulk(bulk):
     headers = {"Content-Type": "application/x-ndjson"}
     r = session.post(url=url, headers=headers, data=bulk)
     if r.status_code != 200:
-        errlog.warning("Got http error from elastic: %s %s ; %s" , r.status_code , r.text, bulk)
+        errlog.warning("Got http error from elastic: %s %s" , r.status_code , r.text)
     response=json.loads(r.text)
     if response["errors"]:
         errlog.warning("Elastic status is ERROR!")
@@ -152,7 +159,7 @@ if __name__ == "__main__":
                       help="Creates a summary based on a previously generated json file")
     parser.add_option("-s", "--search",
                       dest="search_string", default="",
-                      help="Search a subset of files with syntax: [uid]:[gid]:[path_glob] (--analyze needed)")
+                      help="Search a subset of files with syntax: [uid]:[gid]:[path_glob] (--analyze or --elastic-host needed)")
     parser.add_option("--numeric",                                             
                       action="store_true", dest="numeric", default=False,                               
                       help="Output numeric uid/gid instead of names") 
@@ -164,12 +171,14 @@ if __name__ == "__main__":
                       help="Use an elasticsearch server for output. 'Ex: http://localhost:9200'")
     parser.add_option("--elastic-index", dest='elastic_index', default="fswalk",
                      help="Name of the elasticsearch index")
+    parser.add_option("--elastic-bulk-size", dest='max_bulk_size', default=1000,
+                     help="Size of the elastic indexing bulks")
     parser.add_option("-g", "--elastic-purge-index",                                             
                       action="store_true", dest="elastic_purge_index", default=False,                               
                       help="Purge the elasticsearch index before indexing") 
     (options, args) = parser.parse_args()
     
-    # Analyze
+    # Analyze json file
     if options.analyze_file:
         import pwd
         import grp
@@ -237,6 +246,12 @@ if __name__ == "__main__":
                 print("\nTOTAL SIZE: {}\nTOTAL FILES: {}".format(size,count))
         exit(0)
    
+    # Search (elastic backend)
+    if options.elastic_host and options.search_string:
+        import fnmatch
+        s_uid,s_gid,s_path=options.search_string.split(":")
+         
+
 
     # Main program (directory scan)
     if options.elastic_host:
