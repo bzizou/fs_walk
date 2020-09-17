@@ -31,6 +31,7 @@ import logging
 import requests
 from collections import OrderedDict
 
+
 # Scans a directory and prints stats in json 
 def explore_path(path,log):
     global options
@@ -249,8 +250,20 @@ if __name__ == "__main__":
     # Search (elastic backend)
     if options.elastic_host and options.search_string:
         import fnmatch
+        import elasticsearch
+        import elasticsearch.helpers
         s_uid,s_gid,s_path=options.search_string.split(":")
-         
+        query_string="owner:{} AND group:{} AND path:{}".format(s_uid,s_gid,s_path)
+        es = elasticsearch.Elasticsearch([options.elastic_host])
+        results = elasticsearch.helpers.scan(es,
+            index=options.elastic_index,
+            size=2000,
+            preserve_order=True,
+            query="{\"query\": {\"query_string\": { \"query\": \"" + query_string + "\"}}}"
+        )
+        for item in results:
+            print(item["_source"]["path"])
+        exit(0)
 
 
     # Main program (directory scan)
