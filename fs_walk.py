@@ -26,7 +26,10 @@ from optparse import OptionParser
 import gzip
 import base64
 import pyjson5
+import json
 import logging
+import requests
+from collections import OrderedDict
 
 # Scans a directory and prints stats in json 
 def explore_path(path,log):
@@ -37,6 +40,9 @@ def explore_path(path,log):
     data={}
     directories = []
     nondirectories = []
+    bulk=''
+    elastic = True if options.elastic_host is not None else False
+    elastic_index = options.elastic_index
     global hostname
     try:
         for entry in os.scandir(path):
@@ -57,7 +63,13 @@ def explore_path(path,log):
                     "atime" : statinfo.st_atime,
                     "hostname" : hostname
                 }
-                log.info(pyjson5.dumps(data,indent=1)+",")
+                if elastic:
+                    bulk+='{ "create" : { "_index" : "'+elastic_index+'" }}\n'
+                    bulk+=pyjson5.dumps(data,indent=1)+'\n'
+                else:
+                    log.info(pyjson5.dumps(data,indent=1)+",")
+        if elastic and bulk != '':
+            index_bulk(bulk) 
     except Exception as e:
         print(path + ": ",e,file=sys.stderr)
         sys.stderr.flush()
@@ -79,11 +91,44 @@ def parallel_worker():
 def print_error(err):
     print(err)
 
+# Elastisearch bulk indexation
+def index_bulk(bulk):
+    """Do a bulk indexing into elasticsearch"""
+    global errlog
+    global options
+    global session
+    elastic_host = options.elastic_host
+    url = "{elastic_host}/_bulk/".format(elastic_host=elastic_host)
+    headers = {"Content-Type": "application/x-ndjson"}
+    r = session.post(url=url, headers=headers, data=bulk)
+    if r.status_code != 200:
+        errlog.warning("Got http error from elastic: %s %s ; %s" , r.status_code , r.text, bulk)
+    response=json.loads(r.text)
+    if response["errors"]:
+        errlog.warning("Elastic status is ERROR!")
+        for item in response["items"]:
+            for key in item:
+                it=item[key]
+                if it["status"] != 201 :
+                    errlog.warning("Status %s for %s action:", it["status"], key)
+                    errlog.warning(json.dumps(item[key]))
+    else:
+        errlog.debug("Elastic bulk push ok: took %s ms" , response["took"])
+
+# Purge elasticsearch index
+def purge_index():
+    global options
+    s = requests.Session()
+    r = s.delete(url=options.elastic_host + "/" + options.elastic_index)
+    s.close()
+ 
+# Main program
 if __name__ == "__main__":
 
     # Setup a logger as a thread-safe output
     # as we can't use directly stdout, because threads may mix their outputs
     log = logging.getLogger()
+    errlog = logging.getLogger()
     log.setLevel(logging.INFO)
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
@@ -111,6 +156,14 @@ if __name__ == "__main__":
     parser.add_option("--numeric",                                             
                       action="store_true", dest="numeric", default=False,                               
                       help="Output numeric uid/gid instead of names") 
+    parser.add_option("-e", "--elastic-host",
+                      dest="elastic_host", default=None,
+                      help="Use an elasticsearch server for output. 'Ex: localhost:9200'")
+    parser.add_option("--elastic-index", dest='elastic_index', default="fswalk",
+                     help="Name of the elasticsearch index")
+    parser.add_option("-g", "--elastic-purge-index",                                             
+                      action="store_true", dest="elastic_purge_index", default=False,                               
+                      help="Purge the elasticsearch index before indexing") 
     (options, args) = parser.parse_args()
     
     # Analyze
@@ -183,7 +236,11 @@ if __name__ == "__main__":
    
 
     # Main program (directory scan)
-    print("[")
+    if options.elastic_host:
+        session = requests.Session()
+        if options.elastic_purge_index : purge_index()
+    else: 
+        print("[")
     unsearched = Queue()
     unsearched.put(options.path)
     hostname = socket.gethostname()
@@ -191,4 +248,7 @@ if __name__ == "__main__":
     for i in range(int(options.nproc)):
         pool.apply_async(parallel_worker,error_callback=print_error)
     unsearched.join()
-    print("]")
+    if options.elastic_host : 
+        session.close() 
+    else : 
+        print("]")
