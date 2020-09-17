@@ -156,9 +156,12 @@ if __name__ == "__main__":
     parser.add_option("--numeric",                                             
                       action="store_true", dest="numeric", default=False,                               
                       help="Output numeric uid/gid instead of names") 
+    parser.add_option("--hostname",
+                      dest="hostname", default=None,
+                      help="Overwrite the value of the hostname string. Defaults to local hostname.")
     parser.add_option("-e", "--elastic-host",
                       dest="elastic_host", default=None,
-                      help="Use an elasticsearch server for output. 'Ex: localhost:9200'")
+                      help="Use an elasticsearch server for output. 'Ex: http://localhost:9200'")
     parser.add_option("--elastic-index", dest='elastic_index', default="fswalk",
                      help="Name of the elasticsearch index")
     parser.add_option("-g", "--elastic-purge-index",                                             
@@ -243,7 +246,10 @@ if __name__ == "__main__":
         print("[")
     unsearched = Queue()
     unsearched.put(options.path)
-    hostname = socket.gethostname()
+    if options.hostname:
+        hostname = options.hostname
+    else:
+        hostname = socket.gethostname()
     pool = Pool(int(options.nproc))
     for i in range(int(options.nproc)):
         pool.apply_async(parallel_worker,error_callback=print_error)
