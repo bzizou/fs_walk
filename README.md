@@ -1,5 +1,5 @@
 # fs_walk
-An efficient multiprocessing directory walk and analyze tool
+An efficient multiprocessing directory walk and search tool
 
 ## Introduction
 fs_walk is a simple python script that recursively walks through a filesystem 
