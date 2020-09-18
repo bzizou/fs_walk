@@ -1,23 +1,8 @@
 #!/usr/bin/env python3
-
-# fs_walk scans a directory recursively, in parallel
-# and outputs a json list of files meta-data 
-# (name, size, owner, group and atime)
-#
-# Example:
-#   fs_walk.py -p /home -x '^/home/\.snapshot/' -n 8 |gzip > /home/home_walk.json.gz
-#   fs_walk.py -a /home/home_walk.json.gz
-#
-# This scans /home with 8 process and excludes /home/.snapshot/ from the scan
-# Then it generates and prints a summary
-#
-# Warning: an extraneous "," sign might break json compatibility. It can't 
-# be removed because of the parallelisation optimization. So you might have
-# to use a json5 decoder, to allow such syntax.
-
 from multiprocessing.pool import Pool
 from multiprocessing import JoinableQueue as Queue 
-#from multiprocessing import Manager
+from multiprocessing import set_start_method
+set_start_method("spawn")
 import os
 import sys
 import socket
@@ -120,6 +105,7 @@ def purge_index(options):
  
 # Main program
 def main():
+
 
     # Setup a logger as a thread-safe output
     # as we can't use directly stdout, because threads may mix their outputs
