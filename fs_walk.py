@@ -160,7 +160,7 @@ if __name__ == "__main__":
                       help="Creates a summary based on a previously generated json file")
     parser.add_option("-s", "--search",
                       dest="search_string", default="",
-                      help="Search a subset of files with syntax: [uid]:[gid]:[path_glob] (--analyze or --elastic-host needed)")
+                      help="Search a subset of files with syntax: [uid]:[gid]:[path_glob]:[hostname] (--analyze or --elastic-host needed)")
     parser.add_option("--numeric",                                             
                       action="store_true", dest="numeric", default=False,                               
                       help="Output numeric uid/gid instead of names") 
@@ -252,8 +252,8 @@ if __name__ == "__main__":
         import fnmatch
         import elasticsearch
         import elasticsearch.helpers
-        s_uid,s_gid,s_path=options.search_string.split(":")
-        query_string="owner:{} AND group:{} AND path:{}".format(s_uid,s_gid,s_path)
+        s_uid,s_gid,s_path,hostname=options.search_string.split(":")
+        query_string="owner:{} AND group:{} AND path:{} AND hostname:{}".format(s_uid,s_gid,s_path,hostname)
         query = {
                 "query": {
                     "query_string" : {

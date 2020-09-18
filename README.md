@@ -61,7 +61,7 @@ bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -p /home/bzizou -x '^/home/bzizou/\.sn
 Do a search for all files with the "povray" string in their path name and belonging to the user which uid is 10000:
 
 ```
-bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py --elastic-host=http://localhost:9200 --elastic-index=fs_walk_home --search="10000:*:povray"
+bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py --elastic-host=http://localhost:9200 --elastic-index=fs_walk_home --search="10000:*:povray:*"
 /home/bzizou/povray/OAR.cigri.14068.1251218.stderr
 /home/bzizou/povray/OAR.cigri.14068.1251220.stderr
 /home/bzizou/povray/OAR.cigri.14068.1251224.stderr
@@ -92,8 +92,8 @@ Options:
                         file
   -s SEARCH_STRING, --search=SEARCH_STRING
                         Search a subset of files with syntax:
-                        [uid]:[gid]:[path_glob] (--analyze or --elastic-host
-                        needed)
+                        [uid]:[gid]:[path_glob]:[hostname] (--analyze or
+                        --elastic-host needed)
   --numeric             Output numeric uid/gid instead of names
   --hostname=HOSTNAME   Overwrite the value of the hostname string. Defaults
                         to local hostname.
