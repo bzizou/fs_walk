@@ -264,7 +264,7 @@ if __name__ == "__main__":
         es = elasticsearch.Elasticsearch([options.elastic_host])
         results = elasticsearch.helpers.scan(es,
             index=options.elastic_index,
-            size=10000,
+            size=int(options.max_bulk_size),
             query=query
         )
         for item in results:
