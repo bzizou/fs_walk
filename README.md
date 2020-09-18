@@ -7,14 +7,17 @@ directory to gather files meta-data and collect them into a json file.
 It runs several processes, each responsible of doing the list of the files
 contained into a subdirectory.
 Collected meta-data are `filename, path, uid, gid, size` and `atime`.
+The output is either a json file sent on the fly to stdout, or an Elastisearch
+indexing. A simple search option is provided to retrieve files by their owner,
+group or a part of the name.
 
 The script aslo provides an option to do a quick analyze of the resulting
 output file.
 
-*warning*: due to multiprocessing and not to slow down the thing, the json file
-is printed on stdout and an extra `,` sign might break json compatibility.
-The `pyjson5` python library allows such non-standard json file to be read. This
-ibrary is required by the `--analyze` option.
+*warning*: When the results are sent to stdout, due to multiprocessing and not 
+to slow down the thing, the json file is printed with an extra `,` sign that might 
+break json compatibility.
+The `pyjson5` python library allows such non-standard json file to be read.
 
 ## Example
 
