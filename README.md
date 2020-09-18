@@ -1,8 +1,8 @@
-# fs_walk
+# fswalk
 An efficient multiprocessing directory walk and search tool
 
 ## Introduction
-fs_walk is a simple python script that recursively walks through a filesystem 
+fswalk is a simple python script that recursively walks through a filesystem 
 directory to gather files meta-data and collect them into a **json file** or
 an **Elasticsearch** database.
 It runs several processes, each responsible of doing the list of the files
@@ -20,19 +20,28 @@ to slow down the thing, the json file is printed with an extra `,` sign that mig
 break json compatibility.
 The `pyjson5` python library allows such non-standard json file to be read.
 
+## Installation
+
+Requirements:
+  - python >= 3.5
+
+```
+$ pip install [--user] .
+```
+
 ## Example
 
 Start a walk into the `/home/bzizou` directory with 8 process, excluding 
 the `.snapshot`subdirectory and getting the result as a gzipped json file:
 
 ```
-bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -p /home/bzizou -x '^/home/bzizou/\.snapshot/' -n 8 |gzip > /tmp/out.gz    
+bzizou@f-dahu:~/git/fs_walk$ fswalk -p /home/bzizou -x '^/home/bzizou/\.snapshot/' -n 8 |gzip > /tmp/out.gz    
 ```
 
 Analyze the output from the resulting file:
 
 ```
-bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -a /tmp/out.gz
+bzizou@f-dahu:~/git/fs_walk$ fswalk -a /tmp/out.gz
 User                                       Size            Count
 =================================================================
 bzizou                               2749804131            11125
@@ -55,13 +64,13 @@ TOTAL FILES: 12959
 Same directory scan, but we index the results into an Elastisearch database:
 
 ```
-bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -p /home/bzizou -x '^/home/bzizou/\.snapshot/' -n 8 --elastic-host=http://localhost:9200 --elastic-index=fs_walk_home -g
+bzizou@f-dahu:~/git/fs_walk$ fswalk -p /home/bzizou -x '^/home/bzizou/\.snapshot/' -n 8 --elastic-host=http://localhost:9200 --elastic-index=fs_walk_home -g
 ```
 
 Do a search for all files with the "povray" string in their path name and belonging to the user which uid is 10000:
 
 ```
-bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py --elastic-host=http://localhost:9200 --elastic-index=fs_walk_home --search="10000:*:povray:*"
+bzizou@f-dahu:~/git/fs_walk$ fswalk --elastic-host=http://localhost:9200 --elastic-index=fs_walk_home --search="10000:*:povray:*"
 /home/bzizou/povray/OAR.cigri.14068.1251218.stderr
 /home/bzizou/povray/OAR.cigri.14068.1251220.stderr
 /home/bzizou/povray/OAR.cigri.14068.1251224.stderr
@@ -78,7 +87,7 @@ bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py --elastic-host=http://localhost:9200 -
 
 ## Usage
 ```
-Usage: fs_walk.py [options]
+Usage: fswalk [options]
 
 Options:
   -h, --help            show this help message and exit

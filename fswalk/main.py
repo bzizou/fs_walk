@@ -24,7 +24,6 @@ import socket
 import re
 from optparse import OptionParser
 import gzip
-import base64
 import pyjson5
 import json
 import logging
@@ -33,8 +32,7 @@ from collections import OrderedDict
 
 
 # Scans a directory and prints stats in json 
-def explore_path(path,log):
-    global options
+def explore_path(path,log,errlog,options,hostname,session):
     if options.exclude_expr:
         if re.match(options.exclude_expr, path):
             return []
@@ -46,7 +44,6 @@ def explore_path(path,log):
     max_bulk_size = int(options.max_bulk_size)
     elastic = True if options.elastic_host is not None else False
     elastic_index = options.elastic_index
-    global hostname
     try:
         for entry in os.scandir(path):
             fullname = os.path.join(path, entry.name)
@@ -71,13 +68,13 @@ def explore_path(path,log):
                     bulk+=pyjson5.dumps(data,indent=1)+'\n'
                     bulk_size+=1
                     if bulk_size >= max_bulk_size:
-                        index_bulk(bulk)
+                        index_bulk(bulk,errlog,options,session)
                         bulk_size=0
                         bulk=''
                 else:
                     log.info(pyjson5.dumps(data,indent=1)+",")
         if elastic and bulk != '':
-            index_bulk(bulk) 
+            index_bulk(bulk,errlog,options,session) 
     except Exception as e:
         print(path + ": ",e,file=sys.stderr)
         sys.stderr.flush()
@@ -86,25 +83,17 @@ def explore_path(path,log):
     return directories
 
 # Worker for multiprocessing search of files
-def parallel_worker():
-    global log
+def parallel_worker(unsearched,log,errlog,options,hostname,session):
     while True:
         path = unsearched.get()
-        dirs = explore_path(path,log)
+        dirs = explore_path(path,log,errlog,options,hostname,session)
         for newdir in dirs:
             unsearched.put(newdir)
         unsearched.task_done()
 
-# Probably never called as we catch exceptions inside the worker
-def print_error(err):
-    print(err)
-
 # Elastisearch bulk indexation
-def index_bulk(bulk):
+def index_bulk(bulk,errlog,options,session):
     """Do a bulk indexing into elasticsearch"""
-    global errlog
-    global options
-    global session
     elastic_host = options.elastic_host
     url = "{elastic_host}/_bulk/".format(elastic_host=elastic_host)
     headers = {"Content-Type": "application/x-ndjson"}
@@ -124,14 +113,13 @@ def index_bulk(bulk):
         errlog.debug("Elastic bulk push ok: took %s ms" , response["took"])
 
 # Purge elasticsearch index
-def purge_index():
-    global options
+def purge_index(options):
     s = requests.Session()
     r = s.delete(url=options.elastic_host + "/" + options.elastic_index)
     s.close()
  
 # Main program
-if __name__ == "__main__":
+def main():
 
     # Setup a logger as a thread-safe output
     # as we can't use directly stdout, because threads may mix their outputs
@@ -275,8 +263,9 @@ if __name__ == "__main__":
     # Main program (directory scan)
     if options.elastic_host:
         session = requests.Session()
-        if options.elastic_purge_index : purge_index()
-    else: 
+        if options.elastic_purge_index : purge_index(options)
+    else:
+        session = None
         print("[")
     unsearched = Queue()
     unsearched.put(options.path)
@@ -286,7 +275,7 @@ if __name__ == "__main__":
         hostname = socket.gethostname()
     pool = Pool(int(options.nproc))
     for i in range(int(options.nproc)):
-        pool.apply_async(parallel_worker,error_callback=print_error)
+        pool.apply_async(parallel_worker(unsearched,log,errlog,options,hostname,session))
     unsearched.join()
     if options.elastic_host : 
         session.close() 
