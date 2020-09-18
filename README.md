@@ -3,7 +3,8 @@ An efficient multiprocessing directory walk and analyze tool
 
 ## Introduction
 fs_walk is a simple python script that recursively walks through a filesystem 
-directory to gather files meta-data and collect them into a json file.
+directory to gather files meta-data and collect them into a **json file** or
+an **Elasticsearch** database.
 It runs several processes, each responsible of doing the list of the files
 contained into a subdirectory.
 Collected meta-data are `filename, path, uid, gid, size` and `atime`.
