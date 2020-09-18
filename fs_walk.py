@@ -254,12 +254,18 @@ if __name__ == "__main__":
         import elasticsearch.helpers
         s_uid,s_gid,s_path=options.search_string.split(":")
         query_string="owner:{} AND group:{} AND path:{}".format(s_uid,s_gid,s_path)
+        query = {
+                "query": {
+                    "query_string" : {
+                        "query": query_string
+                        }
+                    }
+                }
         es = elasticsearch.Elasticsearch([options.elastic_host])
         results = elasticsearch.helpers.scan(es,
             index=options.elastic_index,
-            size=2000,
-            preserve_order=True,
-            query="{\"query\": {\"query_string\": { \"query\": \"" + query_string + "\"}}}"
+            size=10000,
+            query=query
         )
         for item in results:
             print(item["_source"]["path"])

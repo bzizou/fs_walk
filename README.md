@@ -19,13 +19,13 @@ ibrary is required by the `--analyze` option.
 ## Example
 
 Start a walk into the `/home/bzizou` directory with 8 process, excluding 
-the `.snapshot`subdirectory:
+the `.snapshot`subdirectory and getting the result as a gzipped json file:
 
 ```
 bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -p /home/bzizou -x '^/home/bzizou/\.snapshot/' -n 8 |gzip > /tmp/out.gz    
 ```
 
-Analyze the output:
+Analyze the output from the resulting file:
 
 ```
 bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -a /tmp/out.gz
@@ -48,6 +48,30 @@ TOTAL SIZE: 4171887656
 TOTAL FILES: 12959
 ```
 
+Same directory scan, but we index the results into an Elastisearch database:
+
+```
+bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py -p /home/bzizou -x '^/home/bzizou/\.snapshot/' -n 8 --elastic-host=http://localhost:9200 --elastic-index=fs_walk_home -g
+```
+
+Do a search for all files with the "povray" string in their path name and belonging to the user which uid is 10000:
+
+```
+bzizou@f-dahu:~/git/fs_walk$ ./fs_walk.py --elastic-host=http://localhost:9200 --elastic-index=fs_walk_home --search="10000:*:povray"
+/home/bzizou/povray/OAR.cigri.14068.1251218.stderr
+/home/bzizou/povray/OAR.cigri.14068.1251220.stderr
+/home/bzizou/povray/OAR.cigri.14068.1251224.stderr
+/home/bzizou/povray/OAR.cigri.14068.1251231.stderr
+/home/bzizou/povray/OAR.cigri.14068.1251231.stdout
+/home/bzizou/povray/OAR.cigri.14068.1251233.stderr
+/home/bzizou/povray/OAR.cigri.14068.1251233.stdout
+/home/bzizou/povray/OAR.cigri.14068.1251234.stderr
+/home/bzizou/povray/OAR.cigri.14068.1251234.stdout
+/home/bzizou/povray/OAR.cigri.14068.1251237.stderr
+/home/bzizou/povray/OAR.cigri.14068.1251237.stdout
+/home/bzizou/povray/OAR.cigri.14068.1251238.stderr
+```
+
 ## Usage
 ```
 Usage: fs_walk.py [options]
@@ -60,8 +84,24 @@ Options:
   -x EXCLUDE_EXPR, --exclude=EXCLUDE_EXPR
                         Regular expression for path exclusion
   -a ANALYZE_FILE, --analyze=ANALYZE_FILE
-                        Creates a summary based on a previously generated file
+                        Creates a summary based on a previously generated json
+                        file
+  -s SEARCH_STRING, --search=SEARCH_STRING
+                        Search a subset of files with syntax:
+                        [uid]:[gid]:[path_glob] (--analyze or --elastic-host
+                        needed)
   --numeric             Output numeric uid/gid instead of names
+  --hostname=HOSTNAME   Overwrite the value of the hostname string. Defaults
+                        to local hostname.
+  -e ELASTIC_HOST, --elastic-host=ELASTIC_HOST
+                        Use an elasticsearch server for output. 'Ex:
+                        http://localhost:9200'
+  --elastic-index=ELASTIC_INDEX
+                        Name of the elasticsearch index
+  --elastic-bulk-size=MAX_BULK_SIZE
+                        Size of the elastic indexing bulks
+  -g, --elastic-purge-index
+                        Purge the elasticsearch index before indexing
 ```
 
 The `ANALYZE_FILE` parameter may be a gzip compressed json file or a plain-text json file.
