@@ -26,8 +26,16 @@ Requirements:
   - python >= 3.5
   - python packages: requests, pyjson5, elasticsearch
 
+Installing the current stable release:
+
 ```
-$ pip install [--user] .
+$ pip install fswalk
+```
+
+Installing the latest devel snapshot:
+
+```
+$ pip install git+https://github.com/bzizou/fs_walk.git
 ```
 
 ## Example
