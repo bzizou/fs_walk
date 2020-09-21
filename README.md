@@ -24,6 +24,7 @@ The `pyjson5` python library allows such non-standard json file to be read.
 
 Requirements:
   - python >= 3.5
+  - python packages: requests, pyjson5, elasticsearch
 
 ```
 $ pip install [--user] .
