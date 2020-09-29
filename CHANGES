@@ -1,6 +1,11 @@
 fswalk CHANGELOG
 ================
 
+Version 1.2.0
+-------------
+
+- More fields (owner_name, group_name, @timestamp)
+
 Version 1.1.0
 -------------
 
