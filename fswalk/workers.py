@@ -9,6 +9,7 @@ import pyjson5
 import json
 import requests
 import re
+import time
 
 # Setup a logger as a thread-safe output
 # as we can't use directly stdout, because threads may mix their outputs
@@ -89,7 +90,19 @@ def index_bulk(bulk,options,session):
     elastic_host = options.elastic_host
     url = "{elastic_host}/_bulk/".format(elastic_host=elastic_host)
     headers = {"Content-Type": "application/x-ndjson"}
-    r = session.post(url=url, headers=headers, data=bulk)
+    tries=0
+    while True:
+        try:
+            r = session.post(url=url, headers=headers, data=bulk)
+        except requests.exceptions.ConnectionError:
+            errlog.warning("Connection error, retrying in 5s...")
+            time.sleep(5)
+            tries+=1
+            if tries > 50:
+                errlog.error("Too many connection errors: %s %s", r.status_code, r.text)
+                break
+        else:
+            break
     if r.status_code != 200:
         errlog.warning("Got http error from elastic: %s %s" , r.status_code , r.text)
     response=json.loads(r.text)
