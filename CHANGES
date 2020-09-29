@@ -1,6 +1,13 @@
 fswalk CHANGELOG
 ================
 
+Version 1.1.0
+-------------
+
+- Provides an elastic index renaming script and a sample daily job
+- Better elasticsearch connection handling
+- Code reorganization
+
 Version 1.0.0
 -------------
 
