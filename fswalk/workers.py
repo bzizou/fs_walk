@@ -52,9 +52,15 @@ def explore_path(path,options,hostname,session):
                     nondirectories.append(fullname)
                     statinfo = entry.stat()
                 if not statinfo.st_uid in users:
-                    users[statinfo.st_uid]=pwd.getpwuid(statinfo.st_uid)[0]
+                    try:
+                        users[statinfo.st_uid]=pwd.getpwuid(statinfo.st_uid)[0]
+                    except:
+                        users[statinfo.st_uid]=str(statinfo.st_uid)
                 if not statinfo.st_gid in groups:
-                    groups[statinfo.st_gid]=grp.getgrgid(statinfo.st_gid)[0]
+                    try:
+                        groups[statinfo.st_gid]=grp.getgrgid(statinfo.st_gid)[0]
+                    except:
+                        groups[statinfo.st_gid]=str(statinfo.st_gid)
                 data={
                     "path" : fullname.encode('utf-8','replace'),
                     "owner" : statinfo.st_uid,
