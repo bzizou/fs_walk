@@ -6,6 +6,9 @@ import logging
 import sys
 import os
 import pyjson5
+import json
+import requests
+import re
 
 # Setup a logger as a thread-safe output
 # as we can't use directly stdout, because threads may mix their outputs

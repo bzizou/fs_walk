@@ -8,8 +8,8 @@ from optparse import OptionParser
 import gzip
 import pyjson5
 import json
-import requests
 from collections import OrderedDict
+import requests
 
 try:
     from .workers import (explore_path, explore_path, parallel_worker, purge_index, unsearched)

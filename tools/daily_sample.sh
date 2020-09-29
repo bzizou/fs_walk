@@ -6,6 +6,6 @@ export SNAPSHOTS=eli
 source ./rename_index.sh
 
 
-fswalk -p /home -x '^/home/\.snapshot/' -n 6 --elastic-host=$ELASTIC_HOST --elastic-index=fswalk_home_new -g --elastic-bulk-size=10000
+fswalk -p /home -x '^/home/\.snapshot/' -n 8 --elastic-host=$ELASTIC_HOST --elastic-index=fswalk_home_new -g --elastic-bulk-size=5000
 delete fswalk_home
 rename fswalk_home_new fswalk_home
