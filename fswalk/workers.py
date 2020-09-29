@@ -10,6 +10,9 @@ import json
 import requests
 import re
 import time
+import pwd
+import grp
+import datetime
 
 # Setup a logger as a thread-safe output
 # as we can't use directly stdout, because threads may mix their outputs
@@ -35,6 +38,9 @@ def explore_path(path,options,hostname,session):
     max_bulk_size = int(options.max_bulk_size)
     elastic = True if options.elastic_host is not None else False
     elastic_index = options.elastic_index
+    users={}
+    groups={}
+    timestamp=datetime.datetime.now().isoformat()
     try:
         for entry in os.scandir(path):
             fullname = os.path.join(path, entry.name)
@@ -45,14 +51,21 @@ def explore_path(path,options,hostname,session):
                 else:
                     nondirectories.append(fullname)
                     statinfo = entry.stat()
+                if not statinfo.st_uid in users:
+                    users[statinfo.st_uid]=pwd.getpwuid(statinfo.st_uid)[0]
+                if not statinfo.st_gid in groups:
+                    groups[statinfo.st_gid]=grp.getgrgid(statinfo.st_gid)[0]
                 data={
                     "path" : fullname.encode('utf-8','replace'),
                     "owner" : statinfo.st_uid,
+                    "owner_name" : users[statinfo.st_uid],
                     "group" : statinfo.st_gid,
+                    "group_name" : groups[statinfo.st_gid],
                     "mode" : statinfo.st_mode,
                     "size" : statinfo.st_size,
                     "atime" : statinfo.st_atime,
-                    "hostname" : hostname
+                    "hostname" : hostname,
+                    "@timestamp" : timestamp
                 }
                 if elastic:
                     bulk+='{ "create" : { "_index" : "'+elastic_index+'" }}\n'
