@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-export ELASTIC_HOST=http://eli.u-ga.fr:9200
-export SNAPSHOTS=eli
+export ELASTIC_HOST=http://localhost:9200
+export SNAPSHOTS=backups
 
 source ./rename_index.sh
 
