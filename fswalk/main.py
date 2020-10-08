@@ -47,7 +47,7 @@ def main():
                       help="Use an elasticsearch server for output. 'Ex: http://localhost:9200'")
     parser.add_option("-P", "--http-credentials",
                       dest="htauth", default=None,
-                      help="Http credentials for elasticsearch if necessary. Syntax: <user>:<passwd>")
+                      help="File containing http credentials for elasticsearch if necessary. Syntax: <user>:<passwd>")
     parser.add_option("--elastic-index", dest='elastic_index', default="fswalk",
                      help="Name of the elasticsearch index")
     parser.add_option("--elastic-bulk-size", dest='max_bulk_size', default=1000,
@@ -139,7 +139,13 @@ def main():
                         }
                     }
                 }
-        es = elasticsearch.Elasticsearch([options.elastic_host],http_auth=options.htauth)
+        if options.htauth is not None:
+            string = open(options.htauth, 'r').read()
+            htuser,htpassword=string.rstrip().split(":",1)
+            http_auth=(htuser,htpassword)
+        else:
+            http_auth=None
+        es = elasticsearch.Elasticsearch([options.elastic_host],http_auth=http_auth)
         results = elasticsearch.helpers.scan(es,
             index=options.elastic_index,
             size=int(options.max_bulk_size),
@@ -154,7 +160,8 @@ def main():
     if options.elastic_host:
         session = requests.Session()
         if options.htauth is not None:
-            htuser,htpassword=options.htauth.split(":",1)
+            string = open(options.htauth, 'r').read()
+            htuser,htpassword=string.strip().split(":",1)
             session.auth = (htuser,htpassword)
         if options.elastic_purge_index : purge_index(options)
     else:
