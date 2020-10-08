@@ -1,6 +1,10 @@
 fswalk CHANGELOG
 ================
 
+Version 1.3.0
+-------------
+- Added http auth support
+
 Version 1.2.0
 -------------
 
