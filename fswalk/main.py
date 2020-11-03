@@ -163,7 +163,7 @@ def main():
             string = open(options.htauth, 'r').read()
             htuser,htpassword=string.strip().split(":",1)
             session.auth = (htuser,htpassword)
-        if options.elastic_purge_index : purge_index(options)
+        if options.elastic_purge_index : purge_index(options,session)
     else:
         session = None
         print("[")

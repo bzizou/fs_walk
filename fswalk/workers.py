@@ -137,7 +137,5 @@ def index_bulk(bulk,options,session):
         errlog.debug("Elastic bulk push ok: took %s ms" , response["took"])
 
 # Purge elasticsearch index
-def purge_index(options):
-    s = requests.Session()
+def purge_index(options,s):
     r = s.delete(url=options.elastic_host + "/" + options.elastic_index)
-    s.close()
