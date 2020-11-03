@@ -1,6 +1,11 @@
 fswalk CHANGELOG
 ================
 
+Version 1.3.2
+-------------
+- Fixed auth support into purge
+
+
 Version 1.3.1
 -------------
 - Added http auth support
