@@ -52,9 +52,12 @@ def main():
                      help="Name of the elasticsearch index")
     parser.add_option("--elastic-bulk-size", dest='max_bulk_size', default=1000,
                      help="Size of the elastic indexing bulks")
-    parser.add_option("-g", "--elastic-purge-index",                                             
-                      action="store_true", dest="elastic_purge_index", default=False,                               
-                      help="Purge the elasticsearch index before indexing") 
+    parser.add_option("-g", "--elastic-purge-index",
+                      action="store_true", dest="elastic_purge_index", default=False, 
+                      help="Purge the elasticsearch index before indexing")
+    parser.add_option("--no-check-certificate",
+                      action="store_true", dest="no_check_certificate", default=False, 
+                      help="Don't check certificates files when using SSL")
     (options, args) = parser.parse_args()
     
     # Analyze json file
@@ -145,7 +148,14 @@ def main():
             http_auth=(htuser,htpassword)
         else:
             http_auth=None
-        es = elasticsearch.Elasticsearch([options.elastic_host],http_auth=http_auth)
+        context = None
+        if options.no_check_certificate:
+            from ssl import create_default_context
+            context = create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
+        es = elasticsearch.Elasticsearch([options.elastic_host],http_auth=http_auth,context=context)
         results = elasticsearch.helpers.scan(es,
             index=options.elastic_index,
             size=int(options.max_bulk_size),
@@ -159,6 +169,9 @@ def main():
     # Main program (directory scan)
     if options.elastic_host:
         session = requests.Session()
+        if options.no_check_certificate:
+            session.verify=False
+            requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
         if options.htauth is not None:
             string = open(options.htauth, 'r').read()
             htuser,htpassword=string.strip().split(":",1)
