@@ -79,8 +79,13 @@ then
       INSECURE="--insecure"
       NOCHECK="--no-check-certificate"
     fi
+
+    if [ "$EXCLUDE" \!= "" ]
+    then
+      X="-x"
+    fi
     
-    fswalk -p $PATH_TO_SCAN  -n $THREADS --elastic-host=$ELASTIC_HOST --elastic-index=$INDEX -g --elastic-bulk-size=$BULK_SIZE --hostname=$HOSTNAME -P $CREDENTIALS_FILE $NOCHECK
+    fswalk -p $PATH_TO_SCAN $X "$EXCLUDE" -n $THREADS --elastic-host=$ELASTIC_HOST --elastic-index=$INDEX -g --elastic-bulk-size=$BULK_SIZE --hostname=$HOSTNAME -P $CREDENTIALS_FILE $NOCHECK
     
     OLD_INDEX=`get_old_index $ALIAS`
     re_alias $INDEX $ALIAS
