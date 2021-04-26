@@ -14,6 +14,8 @@ import pwd
 import grp
 import datetime
 
+
+
 # Setup a logger as a thread-safe output
 # as we can't use directly stdout, because threads may mix their outputs
 log = logging.getLogger()
@@ -25,6 +27,23 @@ formatter = logging.Formatter('%(message)s')
 handler.setFormatter(formatter)
 log.addHandler(handler)
 
+# Set the temperature of the data
+def get_temp(age):
+    if age > 3600*24*365*5:
+        return 1 # > 5 years
+    if 3600*24*365*2 <= age < 3600*24*365*5:
+        return 2 # < 5 years
+    if 3600*24*365 <= age < 3600*24*365*2:
+        return 3 # < 2 years
+    if 3600*24*30*6 <= age < 3600*24*365:
+        return 4 # < 1 year
+    if 3600*24*30 <= age < 3600*24*30*6:
+        return 5 # < 6 months
+    if 3600*24*7 <= age < 3600*24*30:
+        return 6 # < One month
+    if 0 <= age < 3600*24*7:
+        return 7 # Less than a week
+  
 # Scans a directory and prints stats in json 
 def explore_path(path,options,hostname,session):
     if options.exclude_expr:
@@ -71,6 +90,7 @@ def explore_path(path,options,hostname,session):
                     "size" : statinfo.st_size,
                     "atime" : statinfo.st_atime,
                     "hostname" : hostname,
+                    "temperature" : get_temp(datetime.datetime.now().timestamp()-statinfo.st_atime),
                     "@timestamp" : timestamp
                 }
                 if elastic:
