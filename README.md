@@ -22,7 +22,7 @@ break json compatibility.
 The `pyjson5` python library allows such non-standard json file to be read.
 
 \*: `temperature` is a calculated int value from 1 to 7 based on the 
-max(mtime,atime,ctime). 1 is the coldest (>5 years) and 1 the hottest (< 7 days)
+max(mtime,atime,ctime). 1 is the coldest (>5 years) and 7 the hottest (< 7 days)
 
 ## Sample graphs that may be generated with the output produced
 
