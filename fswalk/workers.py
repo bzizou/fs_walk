@@ -89,8 +89,10 @@ def explore_path(path,options,hostname,session):
                     "mode" : statinfo.st_mode,
                     "size" : statinfo.st_size,
                     "atime" : statinfo.st_atime,
+                    "mtime" : statinfo.st_mtime,
+                    "ctime" : statinfo.st_ctime,
                     "hostname" : hostname,
-                    "temperature" : get_temp(datetime.datetime.now().timestamp()-statinfo.st_atime),
+                    "temperature" : get_temp(datetime.datetime.now().timestamp()-max(statinfo.st_atime,statinfo.st_mtime,statinfo.st_ctime)),
                     "@timestamp" : timestamp
                 }
                 if elastic:
