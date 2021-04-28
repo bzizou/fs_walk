@@ -7,7 +7,8 @@ directory to gather files meta-data and collect them into a **json file** or
 an **Elasticsearch** database.
 It runs several processes, each responsible of doing the list of the files
 contained into a subdirectory.
-Collected meta-data are `filename, path, uid, gid, size` and `atime`.
+Collected meta-data are `filename, path, uid, gid, size`,`atime`,`ctime`,`mtime`
+and `temperature` \*.
 The output is either a json file sent on the fly to stdout, or an Elastisearch
 indexing. A simple search option is provided to retrieve files by their owner,
 group or a part of the name.
@@ -19,6 +20,15 @@ output file.
 to slow down the thing, the json file is printed with an extra `,` sign that might 
 break json compatibility.
 The `pyjson5` python library allows such non-standard json file to be read.
+
+\*: `temperature` is a calculated int value from 1 to 7 based on the 
+max(mtime,atime,ctime). 1 is the coldest (>5 years) and 1 the hottest (< 7 days)
+
+## Sample graphs that may be generated with the output produced
+
+![top_20 users](ss1.png)
+
+![data temperatures](ss2.png)
 
 ## Installation
 
@@ -118,12 +128,17 @@ Options:
   -e ELASTIC_HOST, --elastic-host=ELASTIC_HOST
                         Use an elasticsearch server for output. 'Ex:
                         http://localhost:9200'
+  -P HTAUTH, --http-credentials=HTAUTH
+                        File containing http credentials for elasticsearch if
+                        necessary. Syntax: <user>:<passwd>
   --elastic-index=ELASTIC_INDEX
                         Name of the elasticsearch index
   --elastic-bulk-size=MAX_BULK_SIZE
                         Size of the elastic indexing bulks
   -g, --elastic-purge-index
                         Purge the elasticsearch index before indexing
+  --no-check-certificate
+                        Don't check certificates files when using SSL
 ```
 
 The `ANALYZE_FILE` parameter may be a gzip compressed json file or a plain-text json file.
