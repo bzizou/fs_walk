@@ -38,7 +38,8 @@ def aggregate(index,field):
       field = field + ".keyword"
     body={ 
            "aggs": { "2": { "terms": { 
-                              "field": field, 
+                              "field": field,
+                              "size": 10000,
                             }, 
                             "aggs": { 
                               "1": { "sum": {"field": "size"} }
