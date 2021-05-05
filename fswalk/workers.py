@@ -91,6 +91,7 @@ def explore_path(path,options,hostname,session):
                     "atime" : statinfo.st_atime,
                     "mtime" : statinfo.st_mtime,
                     "ctime" : statinfo.st_ctime,
+                    "last_amc_time" : max(statinfo.st_atime,statinfo.st_mtime,statinfo.st_ctime),
                     "hostname" : hostname,
                     "temperature" : get_temp(datetime.datetime.now().timestamp()-max(statinfo.st_atime,statinfo.st_mtime,statinfo.st_ctime)),
                     "@timestamp" : timestamp
