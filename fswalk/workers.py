@@ -62,9 +62,11 @@ def explore_path(path,options,hostname,session):
     timestamp=datetime.datetime.now().isoformat()
     try:
         for entry in os.scandir(path):
+            is_dir=0
             fullname = os.path.join(path, entry.name)
             if not entry.is_symlink():
                 if entry.is_dir():
+                    is_dir=1
                     directories.append(fullname)
                     statinfo = entry.stat() 
                 else:
@@ -94,6 +96,7 @@ def explore_path(path,options,hostname,session):
                     "last_amc_time" : max(statinfo.st_atime,statinfo.st_mtime,statinfo.st_ctime),
                     "hostname" : hostname,
                     "temperature" : get_temp(datetime.datetime.now().timestamp()-max(statinfo.st_atime,statinfo.st_mtime,statinfo.st_ctime)),
+                    "is_dir" : is_dir,
                     "@timestamp" : timestamp
                 }
                 if elastic:
