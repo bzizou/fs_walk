@@ -66,6 +66,10 @@ def explore_path(path,options,hostname,session):
             fullname = os.path.join(path, entry.name)
             elems=fullname.split('/',6)
             l1="/"+elems[1]
+            l2=l1
+            l3=l1
+            l4=l1
+            l5=l1
             if len(elems) == 3:
               l2=l1+"/"+elems[2]
               l3=l2
