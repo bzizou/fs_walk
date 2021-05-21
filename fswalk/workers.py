@@ -64,6 +64,28 @@ def explore_path(path,options,hostname,session):
         for entry in os.scandir(path):
             is_dir=0
             fullname = os.path.join(path, entry.name)
+            elems=fullname.split('/',5)
+            l1="/"+elems[1]
+            if len(elems) == 3:
+              l2=l1+"/"+elems[2]
+              l3=l2
+              l4=l2
+              l5=l2
+            if len(elems) == 4:
+              l2=l1+"/"+elems[2]
+              l3=l2+"/"+elems[3]
+              l4=l3
+              l5=l3
+            if len(elems) == 5:
+              l2=l1+"/"+elems[2]
+              l3=l2+"/"+elems[3]
+              l4=l3+"/"+elems[4]
+              l5=l4
+            if len(elems) == 6:
+              l2=l1+"/"+elems[2]
+              l3=l2+"/"+elems[3]
+              l4=l3+"/"+elems[4]
+              l5=l4+"/"+elems[5]
             if not entry.is_symlink():
                 if entry.is_dir():
                     is_dir=1
@@ -84,6 +106,11 @@ def explore_path(path,options,hostname,session):
                         groups[statinfo.st_gid]=str(statinfo.st_gid)
                 data={
                     "path" : fullname.encode('utf-8','replace'),
+                    "path_l1" : l1.encode('utf-8','replace'),
+                    "path_l2" : l2.encode('utf-8','replace'),
+                    "path_l3" : l3.encode('utf-8','replace'),
+                    "path_l4" : l4.encode('utf-8','replace'),
+                    "path_l5" : l5.encode('utf-8','replace'),
                     "owner" : statinfo.st_uid,
                     "owner_name" : users[statinfo.st_uid],
                     "group" : statinfo.st_gid,
