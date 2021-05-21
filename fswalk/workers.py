@@ -64,7 +64,7 @@ def explore_path(path,options,hostname,session):
         for entry in os.scandir(path):
             is_dir=0
             fullname = os.path.join(path, entry.name)
-            elems=fullname.split('/',5)
+            elems=fullname.split('/',6)
             l1="/"+elems[1]
             if len(elems) == 3:
               l2=l1+"/"+elems[2]
@@ -81,7 +81,7 @@ def explore_path(path,options,hostname,session):
               l3=l2+"/"+elems[3]
               l4=l3+"/"+elems[4]
               l5=l4
-            if len(elems) == 6:
+            if len(elems) == 6 or len(elems) == 7 :
               l2=l1+"/"+elems[2]
               l3=l2+"/"+elems[3]
               l4=l3+"/"+elems[4]
