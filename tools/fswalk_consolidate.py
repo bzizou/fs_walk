@@ -58,15 +58,22 @@ for index in indices:
   print("\n"+index+" : ")
   for field in ["temperature","owner_name","group_name"]:
     print(field+" ",end='', flush=True)
-    result=aggregate(index,field)
+    try:
+      result=aggregate(index,field)
+    except elasticsearch.exceptions.NotFoundError:
+      print("ERROR: "+index+" not found!")
+    except:
+      print("Unexpected error:", sys.exc_info()[0]) 
+      raise
     body=""
-    for row in result['aggregations']['2']['buckets']:
-      body+="{ \"create\" : { \"_index\" : \""+output_index+"\" } }\n"
-      body+="{ \"type\": \""+field+"\","
-      body+=" \"@timestamp\": \""+datetime.datetime.now().replace(microsecond=0).isoformat()+"\","
-      body+=" \"host\": \""+indices[index][0]+"\","
-      body+=" \"space\": \""+indices[index][1]+"\","
-      body+=" \"key\":\""+str(row['key'])+"\","
-      body+=" \"size\":"+str(row['1']['value'])+","
-      body+=" \"number\":"+str(row['doc_count'])+" }\n"
-    res=es.bulk(body=body)
+    if "aggregations" in result:
+      for row in result['aggregations']['2']['buckets']:
+        body+="{ \"create\" : { \"_index\" : \""+output_index+"\" } }\n"
+        body+="{ \"type\": \""+field+"\","
+        body+=" \"@timestamp\": \""+datetime.datetime.now().replace(microsecond=0).isoformat()+"\","
+        body+=" \"host\": \""+indices[index][0]+"\","
+        body+=" \"space\": \""+indices[index][1]+"\","
+        body+=" \"key\":\""+str(row['key'])+"\","
+        body+=" \"size\":"+str(row['1']['value'])+","
+        body+=" \"number\":"+str(row['doc_count'])+" }\n"
+      res=es.bulk(body=body)
