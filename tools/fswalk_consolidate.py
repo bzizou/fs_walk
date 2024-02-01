@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import elasticsearch
+import opensearchpy
 import elasticsearch.helpers
 import json
 import sys
@@ -9,16 +9,15 @@ import datetime
 from ssl import create_default_context
 
 # Config
-credentials = open('/etc/eli_credentials2').read().strip('\n')
-url="https://"+credentials+"@eli.univ-grenoble-alpes.fr/elastic-gricad-boards"
+credentials = open('/etc/eli_credentials_fswalk').read().strip('\n')
+url="https://"+credentials+"@eli.univ-grenoble-alpes.fr:443/opensearch-gricad-boards-os"
 indices = {
-  "fswalk_home_froggy" : [ "froggy", "home" ],
-  "fswalk_scratch_froggy" : [ "froggy", "scratch" ],
   "fswalk_home_luke" : [ "luke", "home" ],
   "fswalk_home" : [ "dahu", "home" ],
   "fswalk_silenus" : [ "silenus", "scratch" ],
   "fswalk_bettik" : [ "bettik", "scratch" ]
 }
+
 output_index = "fswalk_hist"
 timeout=300
 
@@ -30,7 +29,14 @@ context.check_hostname = False
 context.verify_mode = ssl.CERT_NONE
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
-es = elasticsearch.Elasticsearch([url],ssl_context=context)
+(user,password)=credentials.split(":")
+
+es = opensearchpy.OpenSearch(
+  url,
+  basic_auth=(user,password),
+  ssl_context=context,
+  request_timeout=timeout
+)
 
 # Aggregate search by temperatures
 def aggregate(index,field):
@@ -51,7 +57,7 @@ def aggregate(index,field):
              }
            }
          }
-    return es.search(index=index,body=body,request_timeout=timeout)
+    return es.search(index=index,body=body)
 
 # Main
 for index in indices:
