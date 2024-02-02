@@ -35,7 +35,8 @@ es = opensearchpy.OpenSearch(
   url,
   basic_auth=(user,password),
   ssl_context=context,
-  request_timeout=timeout
+  request_timeout=timeout,
+  timeout=timeout
 )
 
 # Aggregate search by temperatures
