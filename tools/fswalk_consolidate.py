@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import opensearchpy
-import elasticsearch.helpers
 import json
 import sys
 import ssl
